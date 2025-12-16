@@ -355,39 +355,61 @@ Guidelines: -1 to 1, negative reduces, positive increases.`;
     const msg = userMessage.toLowerCase();
 
     const moodRules = {
-      'energetic': { energy: 0.7, danceability: 0.6, valence: 0.4, tempo: 0.5 },
-      'sad': { valence: -0.8, energy: -0.5, acousticness: 0.3 },
-      'acoustic': { acousticness: 0.7, energy: -0.3, instrumentalness: 0.2 },
-      'chill': { energy: -0.6, tempo: -0.5, acousticness: 0.4 },
-      'dance': { danceability: 0.8, energy: 0.7, tempo: 0.5 },
-      'electronic': { acousticness: -0.8, energy: 0.6, instrumentalness: 0.5 },
-      'upbeat': { energy: 0.7, valence: 0.7, tempo: 0.4 },
-      'melancholic': { valence: -0.7, energy: -0.4, acousticness: 0.5 },
-      'relaxing': { energy: -0.7, valence: 0.3, loudness: -0.4 },
-      'happy': { valence: 0.8, energy: 0.5, danceability: 0.5 },
-      'slow': { tempo: -0.6, energy: -0.4 },
-      'fast': { tempo: 0.7, energy: 0.5 },
-      'quiet': { loudness: -0.6, speechiness: -0.3 }
+      // Energy levels
+      'energetic': { energy: 0.8, danceability: 0.7, valence: 0.5, tempo: 0.6 },
+      'energy': { energy: 0.8, tempo: 0.5 },
+      'more energy': { energy: 0.8, tempo: 0.5 },
+      'high energy': { energy: 0.9, tempo: 0.7 },
+      'low energy': { energy: -0.8, tempo: -0.5 },
+      
+      // Mood
+      'sad': { valence: -0.9, energy: -0.6, acousticness: 0.2 },
+      'happy': { valence: 0.9, energy: 0.6, danceability: 0.6 },
+      'upbeat': { energy: 0.8, valence: 0.8, tempo: 0.6 },
+      'melancholic': { valence: -0.8, energy: -0.4, acousticness: 0.4 },
+      'relaxing': { energy: -0.8, valence: 0.4, loudness: -0.4 },
+      'chill': { energy: -0.7, tempo: -0.5, acousticness: 0.3 },
+      
+      // Style
+      'acoustic': { acousticness: 0.9, energy: -0.3, instrumentalness: 0.1 },
+      'electronic': { acousticness: -0.9, energy: 0.6, instrumentalness: 0.5 },
+      'dance': { danceability: 0.9, energy: 0.8, tempo: 0.6 },
+      'instrumental': { instrumentalness: 0.8, speechiness: -0.8 },
+      
+      // Tempo
+      'slow': { tempo: -0.7, energy: -0.5 },
+      'fast': { tempo: 0.8, energy: 0.6 },
+      'speed': { tempo: 0.7 },
+      
+      // Volume
+      'quiet': { loudness: -0.7, speechiness: -0.5 },
+      'loud': { loudness: 0.7, energy: 0.6 },
+      
+      // Vibes
+      'feel good': { valence: 0.8, energy: 0.5 },
+      'feel bad': { valence: -0.7, energy: -0.3 }
     };
 
     const adjustments = {
-      energy: 0,
-      danceability: 0,
-      valence: 0,
-      acousticness: 0,
-      instrumentalness: 0,
-      speechiness: 0,
-      liveness: 0,
-      loudness: 0,
-      tempo: 0
+      energy: 0, danceability: 0, valence: 0, acousticness: 0,
+      instrumentalness: 0, speechiness: 0, liveness: 0, loudness: 0, tempo: 0
     };
 
+    // Match keywords and accumulate adjustments
     for (const [keyword, values] of Object.entries(moodRules)) {
       if (msg.includes(keyword)) {
-        Object.assign(adjustments, values);
+        for (const [feature, value] of Object.entries(values)) {
+          adjustments[feature] += value;
+        }
       }
     }
 
+    // Normalize to -1 to 1 range
+    for (const key in adjustments) {
+      adjustments[key] = Math.max(-1, Math.min(1, adjustments[key]));
+    }
+
+    console.log('Mood extracted:', adjustments);
     return adjustments;
   }
 }
