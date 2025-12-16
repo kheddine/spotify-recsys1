@@ -2,9 +2,7 @@
 let recsys = null;
 let llm = null;
 let transformer = null;
-
-// Hardcoded API key - no need to ask user
-const HF_API_KEY = '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';
+let HF_API_KEY = '';
 
 const moodKeywords = [
   'energetic', 'sad', 'acoustic', 'chill', 'dance', 'electronic',
@@ -14,8 +12,16 @@ const moodKeywords = [
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
   const initBtn = document.getElementById('initBtn');
+  const apiKeyInput = document.getElementById('apiKey');
+  
   if (initBtn) {
     initBtn.addEventListener('click', initializeSystem);
+  }
+  
+  if (apiKeyInput) {
+    apiKeyInput.addEventListener('change', function() {
+      HF_API_KEY = this.value.trim();
+    });
   }
 });
 
@@ -58,6 +64,7 @@ async function initializeSystem() {
     document.getElementById('setupPanel').classList.remove('active');
     document.getElementById('chatArea').style.display = 'flex';
     populateMoodKeywords();
+    updatePlaylistDisplay();
     document.getElementById('userInput').focus();
     
     console.log('✓ RecSys ready!');
@@ -183,10 +190,15 @@ function addMessageToChat(content, role) {
     let html = '<div class="content"><div><strong>' + escapeHtml(content.interpretation) + '</strong></div>';
 
     if (content.newRecommendations && content.newRecommendations.length > 0) {
-      html += '<div class="recommendations"><strong style="color: #667eea; display: block; margin-bottom: 8px;">🎵 Top:</strong>';
+      html += '<div class="recommendations"><strong style="color: #667eea; display: block; margin-bottom: 8px;">🎵 Recommendations:</strong>';
 
       content.newRecommendations.slice(0, 5).forEach((track, i) => {
-        html += `<div class="recommendation-item"><strong>${i + 1}. ${escapeHtml(track.name)}</strong><br>${escapeHtml(track.artist)} | ${escapeHtml(track.genre)}<br><span style="color: #999; font-size: 12px;">Similarity: ${track.similarity}</span></div>`;
+        html += `<div class="recommendation-item">
+          <strong>${i + 1}. ${escapeHtml(track.name)}</strong><br>
+          ${escapeHtml(track.artist)} | ${escapeHtml(track.genre)}<br>
+          <span style="color: #999; font-size: 12px;">Similarity: ${track.similarity}</span>
+          <button onclick="addToPlaylist(${track.index}, '${escapeHtml(track.name)}', '${escapeHtml(track.artist)}')" style="display: block; margin-top: 5px; padding: 3px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">+ Add</button>
+        </div>`;
       });
 
       html += '</div>';
@@ -198,6 +210,44 @@ function addMessageToChat(content, role) {
 
   messagesDiv.appendChild(msg);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Add track to playlist
+function addToPlaylist(trackIndex, trackName, artistName) {
+  if (!transformer) return;
+  
+  transformer.addTracksToPlaylist([trackIndex]);
+  
+  // Update playlist display
+  updatePlaylistDisplay();
+  
+  // Show notification
+  showStatus(true);
+  document.getElementById('status').innerHTML = '<span style="color: green;">✓ Added to playlist!</span>';
+  setTimeout(() => {
+    document.getElementById('status').classList.remove('active');
+  }, 2000);
+}
+
+// Update playlist display
+function updatePlaylistDisplay() {
+  const playlistDisplay = document.getElementById('playlistDisplay');
+  const playlistCount = document.getElementById('playlistCount');
+  
+  if (!transformer) return;
+  
+  const playlist = transformer.currentPlaylist;
+  playlistCount.textContent = playlist.length;
+  
+  let html = '';
+  playlist.slice(-10).reverse().forEach(idx => {
+    const info = recsys.getTrackInfo(idx);
+    html += `<div style="padding: 4px 0; border-bottom: 1px solid #eee;">
+      • ${escapeHtml(info.name)} - ${escapeHtml(info.artist)}
+    </div>`;
+  });
+  
+  playlistDisplay.innerHTML = html || '<p style="color: #ccc;">No tracks yet</p>';
 }
 
 // Show/hide loading status
@@ -219,6 +269,7 @@ function resetChat() {
     document.getElementById('userInput').value = '';
     document.getElementById('userInput').focus();
     showInitialPlaylist(transformer.currentPlaylist.slice(0, 5));
+    updatePlaylistDisplay();
   }
 }
 
