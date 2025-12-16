@@ -187,18 +187,32 @@ function addMessageToChat(content, role) {
   } else if (typeof content === 'string') {
     msg.innerHTML = `<div class="content">${escapeHtml(content)}</div>`;
   } else {
-    let html = '<div class="content"><div><strong>' + escapeHtml(content.interpretation) + '</strong></div>';
+    let html = '<div class="content"><div><strong>🎵 ' + escapeHtml(content.interpretation) + '</strong></div>';
 
     if (content.newRecommendations && content.newRecommendations.length > 0) {
-      html += '<div class="recommendations"><strong style="color: #667eea; display: block; margin-bottom: 8px;">🎵 Recommendations:</strong>';
+      html += '<div class="recommendations"><strong style="color: #667eea; display: block; margin-bottom: 12px;">Top Recommendations:</strong>';
 
       content.newRecommendations.slice(0, 5).forEach((track, i) => {
-        html += `<div class="recommendation-item">
-          <strong>${i + 1}. ${escapeHtml(track.name)}</strong><br>
-          ${escapeHtml(track.artist)} | ${escapeHtml(track.genre)}<br>
-          <span style="color: #999; font-size: 12px;">Similarity: ${track.similarity}</span>
-          <button onclick="addToPlaylist(${track.index}, '${escapeHtml(track.name)}', '${escapeHtml(track.artist)}')" style="display: block; margin-top: 5px; padding: 3px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">+ Add</button>
-        </div>`;
+        const matchPercent = Math.round(track.similarity * 100);
+        const barLength = Math.round(track.similarity * 20);
+        const bar = '█'.repeat(barLength) + '░'.repeat(20 - barLength);
+        
+        html += `
+          <div class="recommendation-item">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div style="flex: 1;">
+                <strong style="color: #667eea; font-size: 14px;">${i + 1}. ${escapeHtml(track.name)}</strong><br>
+                <span style="color: #999; font-size: 12px;">${escapeHtml(track.artist)}</span><br>
+                <span style="color: #999; font-size: 11px;">🎼 ${escapeHtml(track.genre)}</span>
+              </div>
+              <div style="text-align: right; margin-left: 10px;">
+                <span style="font-weight: bold; color: #667eea; font-size: 14px;">${matchPercent}%</span><br>
+                <span style="font-size: 10px; color: #999;">${bar}</span>
+              </div>
+            </div>
+            <button onclick="addToPlaylist(${track.index}, '${escapeHtml(track.name)}', '${escapeHtml(track.artist)}')" style="margin-top: 8px; padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; width: 100%;">+ Add to Playlist</button>
+          </div>
+        `;
       });
 
       html += '</div>';
@@ -221,12 +235,14 @@ function addToPlaylist(trackIndex, trackName, artistName) {
   // Update playlist display
   updatePlaylistDisplay();
   
-  // Show notification
+  // Show notification with track details
   showStatus(true);
-  document.getElementById('status').innerHTML = '<span style="color: green;">✓ Added to playlist!</span>';
+  document.getElementById('status').innerHTML = `
+    <span style="color: #4CAF50;">✓ Added: <strong>${escapeHtml(trackName)}</strong> - ${escapeHtml(artistName)}</span>
+  `;
   setTimeout(() => {
     document.getElementById('status').classList.remove('active');
-  }, 2000);
+  }, 3000);
 }
 
 // Update playlist display
@@ -240,14 +256,49 @@ function updatePlaylistDisplay() {
   playlistCount.textContent = playlist.length;
   
   let html = '';
-  playlist.slice(-10).reverse().forEach(idx => {
-    const info = recsys.getTrackInfo(idx);
-    html += `<div style="padding: 4px 0; border-bottom: 1px solid #eee;">
-      • ${escapeHtml(info.name)} - ${escapeHtml(info.artist)}
-    </div>`;
-  });
   
-  playlistDisplay.innerHTML = html || '<p style="color: #ccc;">No tracks yet</p>';
+  if (playlist.length === 0) {
+    html = '<p style="color: #ccc; font-size: 11px;">No tracks yet. Add some!</p>';
+  } else {
+    // Show last 15 tracks (most recent first)
+    const recentTracks = playlist.slice(-15).reverse();
+    recentTracks.forEach((idx, position) => {
+      const info = recsys.getTrackInfo(idx);
+      html += `
+        <div style="padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 12px; font-weight: 500; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${escapeHtml(info.name)}
+            </div>
+            <div style="font-size: 11px; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${escapeHtml(info.artist)}
+            </div>
+          </div>
+          <button onclick="removeFromPlaylist(${idx})" style="margin-left: 5px; padding: 2px 5px; background: #ff4444; color: white; border: none; border-radius: 2px; cursor: pointer; font-size: 10px; white-space: nowrap;">✕</button>
+        </div>
+      `;
+    });
+  }
+  
+  playlistDisplay.innerHTML = html;
+}
+
+// Remove track from playlist
+function removeFromPlaylist(trackIndex) {
+  if (!transformer) return;
+  
+  const idx = transformer.currentPlaylist.indexOf(trackIndex);
+  if (idx > -1) {
+    transformer.currentPlaylist.splice(idx, 1);
+    updatePlaylistDisplay();
+    
+    // Show feedback
+    showStatus(true);
+    document.getElementById('status').innerHTML = '<span style="color: #ff4444;">✓ Removed from playlist</span>';
+    setTimeout(() => {
+      document.getElementById('status').classList.remove('active');
+    }, 2000);
+  }
 }
 
 // Show/hide loading status
