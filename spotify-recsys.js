@@ -354,40 +354,71 @@ Guidelines: -1 to 1, negative reduces, positive increases.`;
   fallbackExtraction(userMessage) {
     const msg = userMessage.toLowerCase();
 
+    // Detailed mood mappings from the document
     const moodRules = {
-      // Energy levels
-      'energetic': { energy: 0.8, danceability: 0.7, valence: 0.5, tempo: 0.6 },
+      // ENERGETIC / UPBEAT
+      'energetic': { energy: 0.8, danceability: 0.7, valence: 0.5, acousticness: -0.3, tempo: 0.6 },
+      'upbeat': { energy: 0.8, danceability: 0.7, valence: 0.5, acousticness: -0.3, tempo: 0.6 },
+      'high energy': { energy: 0.9, tempo: 0.7, danceability: 0.8 },
       'energy': { energy: 0.8, tempo: 0.5 },
-      'more energy': { energy: 0.8, tempo: 0.5 },
-      'high energy': { energy: 0.9, tempo: 0.7 },
-      'low energy': { energy: -0.8, tempo: -0.5 },
       
-      // Mood
-      'sad': { valence: -0.9, energy: -0.6, acousticness: 0.2 },
-      'happy': { valence: 0.9, energy: 0.6, danceability: 0.6 },
-      'upbeat': { energy: 0.8, valence: 0.8, tempo: 0.6 },
+      // SAD / MELANCHOLIC
+      'sad': { valence: -0.9, energy: -0.6, acousticness: 0.3 },
       'melancholic': { valence: -0.8, energy: -0.4, acousticness: 0.4 },
-      'relaxing': { energy: -0.8, valence: 0.4, loudness: -0.4 },
-      'chill': { energy: -0.7, tempo: -0.5, acousticness: 0.3 },
+      'sadness': { valence: -0.9, energy: -0.6, acousticness: 0.3 },
       
-      // Style
-      'acoustic': { acousticness: 0.9, energy: -0.3, instrumentalness: 0.1 },
+      // ACOUSTIC / ORGANIC
+      'acoustic': { acousticness: 0.9, energy: -0.3, instrumentalness: 0.1, loudness: -0.4 },
+      'organic': { acousticness: 0.8, energy: -0.2 },
+      'unplugged': { acousticness: 0.85, energy: -0.3 },
+      
+      // CHILL / RELAXING
+      'chill': { energy: -0.7, tempo: -0.5, acousticness: 0.3, danceability: -0.4 },
+      'relaxing': { energy: -0.8, valence: 0.4, loudness: -0.4, tempo: -0.5 },
+      'calm': { energy: -0.7, tempo: -0.5, danceability: -0.4 },
+      
+      // DANCE / PARTY
+      'dance': { danceability: 0.9, energy: 0.8, tempo: 0.6, acousticness: -0.9 },
+      'party': { danceability: 0.9, energy: 0.8, valence: 0.5, tempo: 0.6 },
+      'danceable': { danceability: 0.9, energy: 0.7 },
+      
+      // ELECTRONIC
       'electronic': { acousticness: -0.9, energy: 0.6, instrumentalness: 0.5 },
-      'dance': { danceability: 0.9, energy: 0.8, tempo: 0.6 },
+      'synth': { acousticness: -0.9, energy: 0.6 },
+      'electronic dance': { acousticness: -0.9, energy: 0.8, danceability: 0.9 },
+      
+      // HAPPY / UPLIFTING
+      'happy': { valence: 0.9, energy: 0.6, danceability: 0.6, acousticness: 0, instrumentalness: -0.3 },
+      'uplifting': { valence: 0.8, energy: 0.6, danceability: 0.5 },
+      'feel good': { valence: 0.8, energy: 0.5, danceability: 0.5 },
+      'joyful': { valence: 0.9, energy: 0.7 },
+      
+      // DARK / INTENSE
+      'dark': { energy: 0.8, valence: -0.4, loudness: 0.7, acousticness: -0.9 },
+      'intense': { energy: 0.9, loudness: 0.7 },
+      'heavy': { energy: 0.8, loudness: 0.6 },
+      
+      // INSTRUMENTAL
       'instrumental': { instrumentalness: 0.8, speechiness: -0.8 },
+      'instrumental music': { instrumentalness: 0.9, speechiness: -0.9 },
       
-      // Tempo
+      // SLOW / FAST / TEMPO
       'slow': { tempo: -0.7, energy: -0.5 },
+      'slow down': { tempo: -0.6, energy: -0.3 },
       'fast': { tempo: 0.8, energy: 0.6 },
-      'speed': { tempo: 0.7 },
+      'speed up': { tempo: 0.7, energy: 0.5 },
+      'quick': { tempo: 0.7, energy: 0.5 },
       
-      // Volume
-      'quiet': { loudness: -0.7, speechiness: -0.5 },
+      // VOLUME
+      'quiet': { loudness: -0.7, speechiness: -0.5, energy: -0.3 },
       'loud': { loudness: 0.7, energy: 0.6 },
+      'soft': { loudness: -0.6, energy: -0.3 },
       
-      // Vibes
-      'feel good': { valence: 0.8, energy: 0.5 },
-      'feel bad': { valence: -0.7, energy: -0.3 }
+      // COMBINED MOODS
+      'sad acoustic': { valence: -0.9, acousticness: 0.8, energy: -0.4 },
+      'happy dance': { valence: 0.8, danceability: 0.9, energy: 0.8 },
+      'chill electronic': { acousticness: -0.9, energy: -0.5, danceability: 0.3 },
+      'dark electronic': { acousticness: -0.9, energy: 0.8, valence: -0.4 },
     };
 
     const adjustments = {
