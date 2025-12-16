@@ -218,15 +218,18 @@ button {
 }
 
 .recommendation-item {
-  padding: 10px;
+  padding: 12px;
   background: white;
-  border-radius: 5px;
-  margin: 5px 0;
+  border-radius: 6px;
+  margin: 8px 0;
   font-size: 13px;
+  border-left: 3px solid #667eea;
+  transition: all 0.2s;
 }
 
-.recommendation-item strong {
-  color: #667eea;
+.recommendation-item:hover {
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  transform: translateX(2px);
 }
 
 .input-area {
